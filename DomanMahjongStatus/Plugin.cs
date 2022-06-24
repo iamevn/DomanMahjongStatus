@@ -24,11 +24,13 @@ namespace DomanMahjongStatus
 
         private IntPtr AddonPtr => GameGui.GetAddonByName("EmjL", 1);
 
+#pragma warning disable IDE0052
         private DalamudPluginInterface PluginInterface { get; init; }
         private ChatGui ChatGui { get; init; }
         private GameGui GameGui { get; init; }
         private Framework Framework { get; init; }
         private CommandManager CommandManager { get; init; }
+#pragma warning restore IDE0052
 
         public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, ChatGui chatGui, GameGui gameGui)
         {
@@ -49,8 +51,17 @@ namespace DomanMahjongStatus
 
         public void Dispose()
         {
-            Framework.Update -= PollMahjong;
-            _ = CommandManager.RemoveHandler(commandName);
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                Framework.Update -= PollMahjong;
+                _ = CommandManager.RemoveHandler(commandName);
+            }
         }
 
         private void OnCommand(string command, string args)

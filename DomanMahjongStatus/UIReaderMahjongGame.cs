@@ -28,11 +28,8 @@ namespace DomanMahjongStatus
             // round/hand number
             unsafe
             {
-                // var topRight = GetImmediateChildWithId(RootNode, 16);
-                // var imgNode = GetImmediateChildWithId(topRight, 19);
-                // var imgNode = GUINodeExtra.GetChildWithId(RootNode, 19); // also works
-                var imgNode = GetChildNested(RootNode, 16, 19);
-                var texRes = GetImageTextureResource(imgNode);
+                AtkResNode* imgNode = GetChildNested(RootNode, 16, 19);
+                AtkTextureResource* texRes = GetImageTextureResource(imgNode);
                 if (texRes != null)
                 {
                     (Round round, int hand) = Conversions.RoundHand(texRes->IconID);
@@ -42,11 +39,11 @@ namespace DomanMahjongStatus
             // riichi/honba count
             unsafe
             {
-                var indicatorsNode = GetImmediateChildWithId(RootNode, 21);
-                var honbaNode = GetImmediateChildWithId(indicatorsNode, 23);
-                var riichiNode = GetImmediateChildWithId(indicatorsNode, 22);
-                var honbaText = GUINodeUtils.GetNodeText(honbaNode);
-                var riichiText = GUINodeUtils.GetNodeText(riichiNode);
+                AtkResNode* indicatorsNode = GetImmediateChildWithId(RootNode, 21);
+                AtkResNode* honbaNode = GetImmediateChildWithId(indicatorsNode, 23);
+                AtkResNode* riichiNode = GetImmediateChildWithId(indicatorsNode, 22);
+                string honbaText = GUINodeUtils.GetNodeText(honbaNode);
+                string riichiText = GUINodeUtils.GetNodeText(riichiNode);
 
                 if (int.TryParse(honbaText?.Trim('×')?.Trim(' '), out int honbaCount))
                     gameState.HonbaCount = honbaCount;
@@ -81,22 +78,22 @@ namespace DomanMahjongStatus
 
                     if (pane != null)
                     {
-                        var nameContainer = GetChildWithId(pane->GetComponent(), 4);
-                        var nameNode = isPlayer ? GetImmediateChildWithId(nameContainer, 5) : GetChildNested(nameContainer, 5, 6);
-                        var name = GUINodeUtils.GetNodeText(nameNode);
+                        AtkResNode* nameContainer = GetChildWithId(pane->GetComponent(), 4);
+                        AtkResNode* nameNode = isPlayer ? GetImmediateChildWithId(nameContainer, 5) : GetChildNested(nameContainer, 5, 6);
+                        string name = GUINodeUtils.GetNodeText(nameNode);
                         if (name != null)
                             player.name = name;
 
-                        var scoreContainer = GetChildWithId(pane->GetComponent(), isPlayer ? 10 : 11);
-                        var pointsComponent = GetChildWithId(scoreContainer, isPlayer ? 12 : 13);
-                        var topTextNode = GetChildWithId(pointsComponent->GetComponent(), 2);
-                        var scoreText = GUINodeUtils.GetNodeText(topTextNode);
+                        AtkResNode* scoreContainer = GetChildWithId(pane->GetComponent(), isPlayer ? 10 : 11);
+                        AtkResNode* pointsComponent = GetChildWithId(scoreContainer, isPlayer ? 12 : 13);
+                        AtkResNode* topTextNode = GetChildWithId(pointsComponent->GetComponent(), 2);
+                        string scoreText = GUINodeUtils.GetNodeText(topTextNode);
                         if (int.TryParse(scoreText, out int score))
                             player.score = score;
 
-                        var seatContainer = GetChildWithId(pane->GetComponent(), isPlayer ? 7 : 8);
-                        var seatTextNode = GetChildWithId(seatContainer, isPlayer ? 9 : 10);
-                        var seatText = GUINodeUtils.GetNodeText(seatTextNode);
+                        AtkResNode* seatContainer = GetChildWithId(pane->GetComponent(), isPlayer ? 7 : 8);
+                        AtkResNode* seatTextNode = GetChildWithId(seatContainer, isPlayer ? 9 : 10);
+                        string seatText = GUINodeUtils.GetNodeText(seatTextNode);
                         if (Enum.TryParse(seatText, false, out Seat seat))
                             player.seat = seat;
                     }

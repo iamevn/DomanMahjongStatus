@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -29,19 +29,20 @@ namespace DomanMahjongStatus
 
         public MahjongStatus ReadMahjongStatus()
         {
-            MahjongStatus gameState = MahjongStatus.DummyStatus();
-            // round/hand number
-            ReadRoundHand().Map(gameState.SetRoundHand);
-            // riichi/honba count
-            ReadHonbaCount().MatchSome(honbaCount => gameState.HonbaCount = honbaCount);
-            ReadRiichiCount().MatchSome(riichiCount => gameState.RiichiCount = riichiCount);
-            // player states
-            ReadPlayerStatus(0).MatchSome(status => gameState.Player = status);
-            ReadPlayerStatus(1).MatchSome(status => gameState.LeftOpponent = status);
-            ReadPlayerStatus(2).MatchSome(status => gameState.MiddleOpponent = status);
-            ReadPlayerStatus(3).MatchSome(status => gameState.RightOpponent = status);
+            (Round round, int hand) = ReadRoundHand().ValueOrFailure("round/hand");
+            int honbaCount = ReadHonbaCount().ValueOrFailure("honba");
+            int riichiCount = ReadRiichiCount().ValueOrFailure("riichi");
+            PlayerStatus playerStatus = ReadPlayerStatus(0).ValueOrFailure("player status");
+            PlayerStatus leftStatus = ReadPlayerStatus(1).ValueOrFailure("left opponent status");
+            PlayerStatus middleStatus = ReadPlayerStatus(2).ValueOrFailure("middle opponent status");
+            PlayerStatus rightStatus = ReadPlayerStatus(3).ValueOrFailure("right opponent status");
+            GameType gameType = ReadGameType().ValueOr(GameType.QuickMatch); //.ValueOrFailure("game type");
 
-            return gameState;
+            return new MahjongStatus(
+                playerStatus, leftStatus, middleStatus, rightStatus,
+                round, hand,
+                riichiCount, honbaCount,
+                gameType);
         }
 
         private Option<(Round, int)> ReadRoundHand()
@@ -128,7 +129,7 @@ namespace DomanMahjongStatus
 
         private Option<GameType> ReadGameType()
         {
-            // TODO: actually read game type
+            // TODO: actually read game type, probably will need to pull it from the duty info ui element?
             return Option.None<GameType>();
         }
 

@@ -1,11 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using static DomanMahjongStatus.Mahjong;
-using static DomanMahjongStatus.GUINodeExtra;
+using static DomanMahjongStatus.GUINodeExtra0;
+using static DomanMahjongStatus.GUINodeExtra1;
+using static DomanMahjongStatus.GUINodeExtra2;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Dalamud.Logging;
 using Optional;

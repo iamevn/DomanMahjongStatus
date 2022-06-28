@@ -7,9 +7,9 @@ using System.Runtime.InteropServices;
 
 namespace DomanMahjongStatus
 {
-    public static class GUINodeExtra
+
+    public static class GUINodeExtra0
     {
-        #region old defs
         public static unsafe AtkTextureResource* GetImageTextureResource(AtkResNode* maybeImageNode)
         {
             if (maybeImageNode != null && maybeImageNode->Type == NodeType.Image)
@@ -114,9 +114,10 @@ namespace DomanMahjongStatus
 
             return GUINodeUtils.ConvertToNodeArr(listAddr);
         }
-        #endregion old defs
+    }
 
-        #region take two
+    public static class GUINodeExtra1
+    {
         public static unsafe Option<T> MaybeDeref<T>(T* maybeNull) where T : unmanaged => maybeNull switch
         {
             null => Option.None<T>(),
@@ -255,9 +256,10 @@ namespace DomanMahjongStatus
             => MaybeDeref(parentNode).FlatMap(node => node.GetComponentChild(childID));
         public static Option<AtkResNode> GetComponentChild(this AtkComponentNode parentNode, int childID)
             => parentNode.ListComponentChildren().FirstOrNone(child => child.NodeID == childID);
-        #endregion take two
+    }
 
-        #region ptr
+    public static class GUINodeExtra2
+    {
         public unsafe class UnmanagedPtr<T> where T : unmanaged
         {
             public T* Ptr { get; init; }
@@ -279,11 +281,8 @@ namespace DomanMahjongStatus
                 return new UnmanagedPtr<U>((U*)Ptr);
             }
         }
-
         public static unsafe Option<UnmanagedPtr<T>> MaybePtr<T>(T* maybeNull) where T : unmanaged
             => UnmanagedPtr<T>.MaybeFrom(maybeNull);
-
-        #endregion ptr
 
         public static unsafe Option<UnmanagedPtr<AtkResNode>> ChildChain(this UnmanagedPtr<AtkResNode> node, params int[] ids)
         {
@@ -291,15 +290,15 @@ namespace DomanMahjongStatus
             {
                 return node.Some();
             }
-            else if (IsComponent(node.Ptr))
+            else if (GUINodeExtra1.IsComponent(node.Ptr))
             {
                 var componentBase = MaybePtr(node.Ptr->GetComponent());
-                Option<UnmanagedPtr<AtkResNode>> child = componentBase.FlatMap(cb => MaybePtr(GetChildWithId(cb.Ptr, ids[0])));
+                Option<UnmanagedPtr<AtkResNode>> child = componentBase.FlatMap(cb => MaybePtr(GUINodeExtra0.GetChildWithId(cb.Ptr, ids[0])));
                 return child.FlatMap(childNode => childNode.ChildChain(ids.Rest()));
             }
             else
             {
-                Option<UnmanagedPtr<AtkResNode>> child = MaybePtr(GetChildWithId(node.Ptr, ids[0]));
+                Option<UnmanagedPtr<AtkResNode>> child = MaybePtr(GUINodeExtra0.GetChildWithId(node.Ptr, ids[0]));
                 return child.FlatMap(childNode => childNode.ChildChain(ids.Rest()));
             }
         }

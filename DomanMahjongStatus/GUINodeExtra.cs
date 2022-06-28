@@ -3,6 +3,7 @@ using Optional;
 using Optional.Collections;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace DomanMahjongStatus
 {
@@ -255,5 +256,83 @@ namespace DomanMahjongStatus
         public static Option<AtkResNode> GetComponentChild(this AtkComponentNode parentNode, int childID)
             => parentNode.ListComponentChildren().FirstOrNone(child => child.NodeID == childID);
         #endregion take two
+
+        #region ptr
+        public unsafe class UnmanagedPtr<T> where T : unmanaged
+        {
+            public T* Ptr { get; init; }
+            public UnmanagedPtr(T* rawPtr)
+            {
+                Ptr = rawPtr;
+            }
+
+            public static Option<UnmanagedPtr<U>> MaybeFrom<U>(U* maybeNull) where U : unmanaged
+            {
+                if (maybeNull == null)
+                    return Option.None<UnmanagedPtr<U>>();
+                else
+                    return Option.Some(new UnmanagedPtr<U>(maybeNull));
+            }
+
+            public UnmanagedPtr<U> Cast<U>() where U : unmanaged
+            {
+                return new UnmanagedPtr<U>((U*)Ptr);
+            }
+        }
+
+        public static unsafe Option<UnmanagedPtr<T>> MaybePtr<T>(T* maybeNull) where T : unmanaged
+            => UnmanagedPtr<T>.MaybeFrom(maybeNull);
+
+        #endregion ptr
+
+        public static unsafe Option<UnmanagedPtr<AtkResNode>> ChildChain(this UnmanagedPtr<AtkResNode> node, params int[] ids)
+        {
+            if (ids.Length == 0)
+            {
+                return node.Some();
+            }
+            else if (IsComponent(node.Ptr))
+            {
+                var componentBase = MaybePtr(node.Ptr->GetComponent());
+                Option<UnmanagedPtr<AtkResNode>> child = componentBase.FlatMap(cb => MaybePtr(GetChildWithId(cb.Ptr, ids[0])));
+                return child.FlatMap(childNode => childNode.ChildChain(ids.Rest()));
+            }
+            else
+            {
+                Option<UnmanagedPtr<AtkResNode>> child = MaybePtr(GetChildWithId(node.Ptr, ids[0]));
+                return child.FlatMap(childNode => childNode.ChildChain(ids.Rest()));
+            }
+        }
+
+        public static unsafe Option<string> GetNodeText(this UnmanagedPtr<AtkResNode> maybeTextNode)
+        {
+            return maybeTextNode.SomeWhen(node => node.Ptr->Type == NodeType.Text)
+                .Map(ptr => ptr.Cast<AtkTextNode>())
+                .FlatMap(GetNodeText);
+        }
+
+        public static unsafe Option<string> GetNodeText(this UnmanagedPtr<AtkTextNode> textNode)
+        {
+            string text = Marshal.PtrToStringUTF8(new IntPtr(textNode.Ptr->NodeText.StringPtr));
+            return text.SomeWhen(t => t != null && t.Length > 0);
+        }
+
+        public static T[] Rest<T>(this T[] arr) => new ArraySegment<T>(arr).Slice(1).ToArray();
+
+        public static Option<int> TryParseInt(this string s)
+        {
+            if (int.TryParse(s, out int i))
+                return i.Some();
+            else
+                return Option.None<int>();
+        }
+
+        public static Option<TEnum> TryParseEnum<TEnum>(this string s, bool ignoreCase = false) where TEnum : struct
+        {
+            if (Enum.TryParse(s, ignoreCase, out TEnum value))
+                return value.Some();
+            else
+                return Option.None<TEnum>();
+        }
     }
 }

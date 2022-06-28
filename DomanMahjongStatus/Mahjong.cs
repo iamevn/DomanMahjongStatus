@@ -61,6 +61,8 @@ namespace DomanMahjongStatus
             else
                 return Prev(seat.Prev(), count - 1);
         }
+        
+        public enum RelativeSeat { Player, Left, Across, Right }
 
         public enum Call { Chi, Pon, Kan, Riichi, Ron, Tsumo }
 

@@ -1,4 +1,5 @@
-﻿using static DomanMahjongStatus.Mahjong;
+﻿using System;
+using static DomanMahjongStatus.Mahjong;
 namespace DomanMahjongStatus
 {
     public class PlayerStatus
@@ -63,6 +64,28 @@ namespace DomanMahjongStatus
             this.hand = 1;
         }
 
+        public MahjongStatus(
+            PlayerStatus player,
+            PlayerStatus leftOpponent,
+            PlayerStatus middleOpponent,
+            PlayerStatus rightOpponent,
+            Round round = Round.East,
+            int hand = 1,
+            int riichiCount = 0,
+            int honbaCount = 0,
+            GameType gameType = GameType.QuickMatch)
+        {
+            this.Player = player;
+            this.LeftOpponent = leftOpponent;
+            this.MiddleOpponent = middleOpponent;
+            this.RightOpponent = rightOpponent;
+            this.Round = round;
+            this.Hand = hand;
+            this.RiichiCount = riichiCount;
+            this.HonbaCount = honbaCount;
+            this.GameType = gameType;
+        }
+
         public bool AdvanceHand(bool clearPot = false, bool clearHonba = false)
         {
             if (Round == Round.South && hand == 4)
@@ -92,6 +115,8 @@ namespace DomanMahjongStatus
 
             return true;
         }
+
+        public bool SetRoundHand((Round round, int hand) roundHand) => SetRoundHand(roundHand.round, roundHand.hand);
 
         public bool SetRoundHand(Round round, int hand)
         {

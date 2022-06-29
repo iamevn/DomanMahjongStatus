@@ -22,7 +22,17 @@ namespace DomanMahjongStatus
         private const string commandName = "/majstat";
         private IntPtr addonPtr = IntPtr.Zero;
 
-        private IntPtr AddonPtr => GameGui.GetAddonByName("EmjL", 1);
+        private IntPtr AddonPtr
+        {
+            get
+            {
+                var firstChoice = GameGui.GetAddonByName("EmjL", 1);
+                if (firstChoice == IntPtr.Zero)
+                    return GameGui.GetAddonByName("Emj", 1);
+                else
+                    return firstChoice;
+            }
+        }
 
 #pragma warning disable IDE0052
         private DalamudPluginInterface PluginInterface { get; init; }

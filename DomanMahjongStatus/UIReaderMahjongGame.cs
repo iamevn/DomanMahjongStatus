@@ -5,9 +5,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using static DomanMahjongStatus.Mahjong;
-using static DomanMahjongStatus.GUINodeExtra0;
-using static DomanMahjongStatus.GUINodeExtra1;
-using static DomanMahjongStatus.GUINodeExtra2;
+using static DomanMahjongStatus.GUINodeExtra;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Dalamud.Logging;
 using Optional;
@@ -22,6 +20,7 @@ namespace DomanMahjongStatus
 
         private unsafe AtkUnitBase* BasePtr => (AtkUnitBase*)addonPtr;
         private unsafe AtkResNode* RootNode => BasePtr->RootNode;
+        private unsafe Option<UnmanagedPtr<AtkResNode>> RootPtr => MaybePtr(RootNode);
 
         public UIReaderMahjongGame(IntPtr addonPtr)
         {
@@ -51,9 +50,10 @@ namespace DomanMahjongStatus
         {
             unsafe
             {
-                AtkResNode* imgNode = GetChildNested(RootNode, 16, 19);
-                AtkTextureResource* texRes = GetImageTextureResource(imgNode);
-                return MaybeDeref(texRes).FlatMap(texRes => Conversions.MaybeRoundHand(texRes.IconID));
+                return RootPtr.FlatMap(root => root.GetChild(16, 19))
+                    .FlatMap(imgNode => imgNode.GetImageTextureResource())
+                    .Map(texRes => texRes.Ptr->IconID)
+                    .FlatMap(Conversions.MaybeRoundHand);
             }
         }
 
@@ -61,12 +61,10 @@ namespace DomanMahjongStatus
         {
             unsafe
             {
-                AtkResNode* honbaNode = GetChildNested(RootNode, 21, 23);
-                string honbaText = GUINodeUtils.GetNodeText(honbaNode);
-                if (int.TryParse(honbaText?.Trim('×')?.Trim(' '), out int honbaCount))
-                    return Option.Some(honbaCount);
-                else
-                    return Option.None<int>();
+                return RootPtr.FlatMap(root => root.GetChild(21, 23))
+                    .FlatMap(GUINodeExtra.GetNodeText)
+                    .Map(honbaText => honbaText.Trim('×').Trim(' '))
+                    .FlatMap(GUINodeExtra.TryParseInt);
             }
         }
 
@@ -74,12 +72,10 @@ namespace DomanMahjongStatus
         {
             unsafe
             {
-                AtkResNode* riichiNode = GetChildNested(RootNode, 21, 22);
-                string riichiText = GUINodeUtils.GetNodeText(riichiNode);
-                if (int.TryParse(riichiText?.Trim('×')?.Trim(' '), out int riichiCount))
-                    return Option.Some(riichiCount);
-                else
-                    return Option.None<int>();
+                return RootPtr.FlatMap(root => root.GetChild(21, 22))
+                    .FlatMap(GUINodeExtra.GetNodeText)
+                    .Map(riichiText => riichiText.Trim('×').Trim(' '))
+                    .FlatMap(GUINodeExtra.TryParseInt);
             }
         }
 
@@ -101,24 +97,24 @@ namespace DomanMahjongStatus
             {
                 Option<UnmanagedPtr<AtkResNode>> paneNode = which.Some().FlatMap(n => n switch
                 {
-                    RelativeSeat.Player => MaybePtr(GetChildNested(RootNode, 36, 37, 38)),
-                    RelativeSeat.Left => MaybePtr(GetChildNested(RootNode, 36, 43, 44)),
-                    RelativeSeat.Across => MaybePtr(GetChildNested(RootNode, 36, 41, 42)),
-                    RelativeSeat.Right => MaybePtr(GetChildNested(RootNode, 36, 39, 40)),
+                    RelativeSeat.Player => RootPtr.FlatMap(node => node.GetChild(36, 37, 38)),
+                    RelativeSeat.Left => RootPtr.FlatMap(node => node.GetChild(36, 43, 44)),
+                    RelativeSeat.Across => RootPtr.FlatMap(node => node.GetChild(36, 41, 42)),
+                    RelativeSeat.Right => RootPtr.FlatMap(node => node.GetChild(36, 39, 40)),
                     _ => Option.None<UnmanagedPtr<AtkResNode>>(),
                 });
                 Option<UnmanagedPtr<AtkComponentBase>> pc = paneNode.FlatMap(res => MaybePtr(res.Ptr->GetComponent()));
                 Option<string> maybeName = paneNode
-                    .FlatMap(node => isPlayer ? node.ChildChain(4, 5) : node.ChildChain(4, 5, 6))
+                    .FlatMap(node => isPlayer ? node.GetChild(4, 5) : node.GetChild(4, 5, 6))
                     .FlatMap(node => node.GetNodeText());
 
                 Option<int> maybeScore = paneNode
-                    .FlatMap(node => isPlayer ? node.ChildChain(10, 12, 2) : node.ChildChain(11, 13, 2))
+                    .FlatMap(node => isPlayer ? node.GetChild(10, 12, 2) : node.GetChild(11, 13, 2))
                     .FlatMap(node => node.GetNodeText())
                     .FlatMap(text => text.TryParseInt());
 
                 Option<Seat> maybeSeat = paneNode
-                    .FlatMap(node => isPlayer ? node.ChildChain(7, 9) : node.ChildChain(8, 10))
+                    .FlatMap(node => isPlayer ? node.GetChild(7, 9) : node.GetChild(8, 10))
                     .FlatMap(node => node.GetNodeText())
                     .FlatMap(text => text.TryParseEnum<Seat>());
 

@@ -10,35 +10,34 @@ namespace DomanMahjongStatus
 {
     public static class Util
     {
-        public unsafe class UnmanagedPtr<T> where T : unmanaged
+        public unsafe class Pointer<T> where T : unmanaged
         {
             public T* Ptr { get; init; }
+            public T Deref { get => *Ptr; }
+            public static implicit operator T*(Pointer<T> p) => p.Ptr;
 
-            private UnmanagedPtr(T* rawPtr)
+            private Pointer(T* rawPtr)
             {
                 Ptr = rawPtr;
             }
 
-            public static Option<UnmanagedPtr<U>> MaybeFrom<U>(U* maybeNull) where U : unmanaged
+            public static Option<Pointer<U>> MaybeFrom<U>(U* maybeNull) where U : unmanaged
             {
                 if (maybeNull == null)
-                    return Option.None<UnmanagedPtr<U>>();
+                    return Option.None<Pointer<U>>();
                 else
-                    return Option.Some(new UnmanagedPtr<U>(maybeNull));
+                    return Option.Some(new Pointer<U>(maybeNull));
             }
 
-            public UnmanagedPtr<U> Cast<U>() where U : unmanaged
+            public Pointer<U> Cast<U>() where U : unmanaged
             {
-                return new UnmanagedPtr<U>((U*)Ptr);
+                return new Pointer<U>((U*)Ptr);
             }
-
-            public static implicit operator T*(UnmanagedPtr<T> p) => p.Ptr;
-            public T Deref() => *Ptr;
 
         }
 
-        public unsafe static Option<UnmanagedPtr<T>> MaybePtr<T>(T* maybeNull) where T : unmanaged
-            => UnmanagedPtr<T>.MaybeFrom(maybeNull);
+        public unsafe static Option<Pointer<T>> MaybePtr<T>(T* maybeNull) where T : unmanaged
+            => Pointer<T>.MaybeFrom(maybeNull);
 
         public static T[] Rest<T>(this T[] arr) => new ArraySegment<T>(arr).Slice(1).ToArray();
 

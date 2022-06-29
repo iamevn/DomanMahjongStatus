@@ -22,7 +22,7 @@ namespace DomanMahjongStatus
 
         private unsafe AtkUnitBase* BasePtr => (AtkUnitBase*)addonPtr;
         private unsafe AtkResNode* RootNode => BasePtr->RootNode;
-        private unsafe Option<UnmanagedPtr<AtkResNode>> RootPtr => MaybePtr(RootNode);
+        private unsafe Option<Pointer<AtkResNode>> RootPtr => MaybePtr(RootNode);
 
         public UIReaderMahjongGame(IntPtr addonPtr)
         {
@@ -95,7 +95,7 @@ namespace DomanMahjongStatus
             bool isPlayer = which == RelativeSeat.Player;
             unsafe
             {
-                Option<UnmanagedPtr<AtkResNode>> paneNode = ReadPlayerPaneComponent(which);
+                Option<Pointer<AtkResNode>> paneNode = ReadPlayerPaneComponent(which);
 
                 Option<string> maybeName = paneNode
                     .FlatMap(node => isPlayer ? node.GetChild(4, 5) : node.GetChild(4, 5, 6))
@@ -118,7 +118,7 @@ namespace DomanMahjongStatus
             }
         }
 
-        private unsafe Option<UnmanagedPtr<AtkResNode>> ReadPlayerPaneComponent(RelativeSeat which)
+        private unsafe Option<Pointer<AtkResNode>> ReadPlayerPaneComponent(RelativeSeat which)
             => which.Some()
                 .FlatMap(_ => _ switch
                     {
@@ -126,7 +126,7 @@ namespace DomanMahjongStatus
                         RelativeSeat.Left => RootPtr.FlatMap(node => node.GetChild(36, 43, 44)),
                         RelativeSeat.Across => RootPtr.FlatMap(node => node.GetChild(36, 41, 42)),
                         RelativeSeat.Right => RootPtr.FlatMap(node => node.GetChild(36, 39, 40)),
-                        _ => Option.None<UnmanagedPtr<AtkResNode>>(),
+                        _ => Option.None<Pointer<AtkResNode>>(),
                     });
         #endregion GameStateReaders
 
@@ -135,17 +135,17 @@ namespace DomanMahjongStatus
                 .FlatMap(node => node.GetChild(which == RelativeSeat.Player ? 14 : 15))
                 .Map(node => node.GetChildren())
                 .ValueOrDefault()
-                .Any(childPtr => childPtr.Deref().IsVisible);
+                .Any(childPtr => childPtr.Deref.IsVisible);
 
         public Option<Mahjong.RelativeSeat> ReadCurrentPlayer()
             => AllSeats().FirstOrNone(IsCurrentPlayer);
 
         #region ScoreScreen
-        public Option<UnmanagedPtr<AtkResNode>> GetScoreScreenNode(bool onlyIfVisible = false)
+        public Option<Pointer<AtkResNode>> GetScoreScreenNode(bool onlyIfVisible = false)
                 => RootPtr.FlatMap(root => root.GetChild(46, 54))
                 .Filter(node =>
                 !onlyIfVisible 
-                || node.GetChildren().Any(nodePtr => nodePtr.Deref().IsVisible));
+                || node.GetChildren().Any(nodePtr => nodePtr.Deref.IsVisible));
         public bool ScoreScreenVisible() => GetScoreScreenNode(true).HasValue;
 
         // score screen is finished loading when Next button is enabled
@@ -153,7 +153,7 @@ namespace DomanMahjongStatus
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(97))
             .FlatMap(node => node.GetAsButtonComponent())
-            .Map(btn => btn.Deref().IsEnabled).ValueOr(false);
+            .Map(btn => btn.Deref.IsEnabled).ValueOr(false);
 
         public Option<string> GetHanFuText()
             => GetScoreScreenNode(true)
@@ -163,7 +163,7 @@ namespace DomanMahjongStatus
         public Option<string> GetHandScoreText()
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(95, 3))
-            .Filter(node => node.Deref().IsVisible)
+            .Filter(node => node.Deref.IsVisible)
             .FlatMap(node => node.GetNodeText());
         // TODO: also check whether 46->54->95->4 is anything
 
@@ -182,21 +182,21 @@ namespace DomanMahjongStatus
             .FlatMap(node => node.GetChild(58))
             .FlatMap(node => node.GetNodeText());
 
-        public Option<UnmanagedPtr<AtkResNode>> GetWinnerHandNode()
+        public Option<Pointer<AtkResNode>> GetWinnerHandNode()
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(60));
-        public Option<UnmanagedPtr<AtkResNode>> GetWinningTileNode()
+        public Option<Pointer<AtkResNode>> GetWinningTileNode()
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(79));
 
-        public Option<UnmanagedPtr<AtkResNode>> GetDoraIndicatorNode()
+        public Option<Pointer<AtkResNode>> GetDoraIndicatorNode()
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(80, 83))
-            .Filter(node => node.Deref().IsVisible);
-        public Option<UnmanagedPtr<AtkResNode>> GetUraDoraIndicatorNode()
+            .Filter(node => node.Deref.IsVisible);
+        public Option<Pointer<AtkResNode>> GetUraDoraIndicatorNode()
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(80, 84))
-            .Filter(node => node.Deref().IsVisible);
+            .Filter(node => node.Deref.IsVisible);
 
         public Option<int> GetRiichiStickCount()
             => GetScoreScreenNode(true)
@@ -206,7 +206,7 @@ namespace DomanMahjongStatus
         public Option<int> GetRiichiStickBonus()
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(86, 89))
-            .Filter(node => node.Deref().IsVisible)
+            .Filter(node => node.Deref.IsVisible)
             .FlatMap(node => node.GetChild(2))
             .FlatMap(node => node.GetNodeText())
             .FlatMap(s => s.TrimStart('+').MaybeParseInt());
@@ -218,7 +218,7 @@ namespace DomanMahjongStatus
         public Option<int> GetRepeatStickBonus()
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(86, 92))
-            .Filter(node => node.Deref().IsVisible)
+            .Filter(node => node.Deref.IsVisible)
             .FlatMap(node => node.GetChild(2))
             .FlatMap(node => node.GetNodeText())
             .FlatMap(s => s.TrimStart('+').MaybeParseInt());

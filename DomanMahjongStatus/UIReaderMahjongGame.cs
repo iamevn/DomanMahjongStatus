@@ -142,8 +142,17 @@ namespace DomanMahjongStatus
         #region ScoreScreen
         public Option<UnmanagedPtr<AtkResNode>> GetScoreScreenNode(bool onlyIfVisible = false)
                 => RootPtr.FlatMap(root => root.GetChild(46, 54))
-                .Filter(node => onlyIfVisible ? node.Deref().IsVisible : true);
+                .Filter(node =>
+                !onlyIfVisible 
+                || node.GetChildren().Any(nodePtr => nodePtr.Deref().IsVisible));
         public bool ScoreScreenVisible() => GetScoreScreenNode(true).HasValue;
+
+        // score screen is finished loading when Next button is enabled
+        public bool ScoreScreenFinished()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(97))
+            .FlatMap(node => node.GetAsButtonComponent())
+            .Map(btn => btn.Deref().IsEnabled).ValueOr(false);
 
         public Option<string> GetHanFuText()
             => GetScoreScreenNode(true)
@@ -213,19 +222,18 @@ namespace DomanMahjongStatus
             .FlatMap(node => node.GetNodeText())
             .FlatMap(s => s.TrimStart('+').TryParseInt());
 
-        public (string, string)[] GetWinningYakuList()
+        public List<(string, string)> GetWinningYakuList()
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(93))
             .FlatMap(node => node.GetAsListComponent())
-            .Map(list => list.GetChildren()).ValueOrDefault()
-            .Map(node =>
-            {
-                var yaku = node.GetChild(2).FlatMap(textNode => textNode.GetNodeText()).ValueOrDefault();
-                var value = node.GetChild(3).FlatMap(textNode => textNode.GetNodeText()).ValueOrDefault();
+            .Map(list => list.GetChildren().Map(node =>
+                {
+                    var yaku = node.GetChild(2).FlatMap(textNode => textNode.GetNodeText()).ValueOr("<missing>");
+                    var value = node.GetChild(3).FlatMap(textNode => textNode.GetNodeText()).ValueOr("<missing>");
 
-                return (yaku, value);
-            });
-            
+                    return (yaku, value);
+                }).ToList()).ValueOr(new List<(string yaku, string value)>());
+
         #endregion ScoreScreen
 
         public class UIReaderError : Exception

@@ -133,19 +133,37 @@ namespace DomanMahjongStatus
                 .FlatMap(tex => MaybePtr(tex.Ptr->AtkTexture.Resource));
         }
 
+        public static unsafe bool ComponentTypeIs(this UnmanagedPtr<AtkComponentBase> basePtr, ComponentType componentType)
+        {
+            Option<UnmanagedPtr<AtkUldComponentInfo>> info = MaybePtr(basePtr.Deref().UldManager.Objects)
+                .Map(ptr => ptr.Cast<AtkUldComponentInfo>());
+            var baseType = info.Map(info => info.Deref().ComponentType);
+            var res = baseType.Map(ct => ct == componentType);
+            return res.ValueOr(false);
+        }
         public static unsafe Option<UnmanagedPtr<AtkComponentList>> GetAsListComponent(this UnmanagedPtr<AtkComponentBase> basePtr)
             // this is safeish (the other thing Objects could be cast as has an enum at same offset as AtkUldComponentInfo.ComponentType
             // which doesn't have an item with the same value as ComponentType.List)
             => basePtr
-                .SomeWhen(b => ((AtkUldComponentInfo*)b.Deref().UldManager.Objects)->ComponentType == ComponentType.List)
+                .SomeWhen(b => b.ComponentTypeIs(ComponentType.List))
                 .Map(b => b.Cast<AtkComponentList>());
-        public static unsafe Option<UnmanagedPtr<AtkComponentList>> GetAsListComponent(this UnmanagedPtr<AtkResNode> nodePtr)
+        public static unsafe Option<UnmanagedPtr<AtkComponentList>> GetAsListComponent(this UnmanagedPtr<AtkResNode> nodePtr) 
             => nodePtr.SomeWhen(n => n.IsComponent())
-            .FlatMap(n => MaybePtr(n.Deref().GetComponent()))
+            .FlatMap(n => MaybePtr(n.Cast<AtkComponentNode>().Deref().Component))
             .FlatMap(c => c.GetAsListComponent());
+
+        public static unsafe Option<UnmanagedPtr<AtkComponentButton>> GetAsButtonComponent(this UnmanagedPtr<AtkComponentBase> basePtr)
+            => basePtr
+                .SomeWhen(b => b.ComponentTypeIs(ComponentType.Button))
+                .Map(b => b.Cast<AtkComponentButton>());
+        public static unsafe Option<UnmanagedPtr<AtkComponentButton>> GetAsButtonComponent(this UnmanagedPtr<AtkResNode> nodePtr)
+            => nodePtr.SomeWhen(n => n.IsComponent())
+                .FlatMap(n => MaybePtr(n.Cast<AtkComponentNode>().Deref().Component))
+                .FlatMap(c => c.GetAsButtonComponent());
 
         public static unsafe UnmanagedPtr<AtkComponentBase>[] GetChildren(this UnmanagedPtr<AtkComponentList> listComponent)
         {
+            // Dalamud.Logging.PluginLog.Log("GetChildren on list component at {addr}", ((IntPtr)listComponent.Ptr).ToString("X"));
             var children = new List<UnmanagedPtr<AtkComponentBase>>();
             for (int i = 0; i < listComponent.Deref().ListLength; i += 1)
             {
@@ -192,6 +210,24 @@ namespace DomanMahjongStatus
                 result.Add(f(arr[i], i));
             }
             return result.ToArray();
+        }
+        public static List<TResult> Map<T, TResult>(this List<T> lst, Func<T, TResult> f)
+        {
+            var result = new List<TResult>();
+            foreach (T elem in lst)
+            {
+                result.Add(f(elem));
+            }
+            return result;
+        }
+        public static List<TResult> Map<T, TResult>(this List<T> lst, Func<T, int, TResult> f)
+        {
+            var result = new List<TResult>();
+            for (int i = 0; i < lst.Count; i += 1)
+            {
+                result.Add(f(lst[i], i));
+            }
+            return result;
         }
 
         public static T[] Filter<T>(this T[] arr, Func<T, bool> f)

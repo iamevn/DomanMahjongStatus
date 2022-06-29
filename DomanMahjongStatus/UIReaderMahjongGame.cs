@@ -45,6 +45,7 @@ namespace DomanMahjongStatus
                 riichiCount, honbaCount);
         }
 
+        #region GameStateReaders
         private Option<(Round, int)> ReadRoundHand()
         {
             unsafe
@@ -126,6 +127,7 @@ namespace DomanMahjongStatus
                         RelativeSeat.Right => RootPtr.FlatMap(node => node.GetChild(36, 39, 40)),
                         _ => Option.None<UnmanagedPtr<AtkResNode>>(),
                     });
+        #endregion GameStateReaders
 
         public bool IsCurrentPlayer(RelativeSeat which)
             => ReadPlayerPaneComponent(which)
@@ -136,6 +138,95 @@ namespace DomanMahjongStatus
 
         public Option<Mahjong.RelativeSeat> ReadCurrentPlayer()
             => AllSeats().FirstOrNone(IsCurrentPlayer);
+
+        #region ScoreScreen
+        public Option<UnmanagedPtr<AtkResNode>> GetScoreScreenNode(bool onlyIfVisible = false)
+                => RootPtr.FlatMap(root => root.GetChild(46, 54))
+                .Filter(node => onlyIfVisible ? node.Deref().IsVisible : true);
+        public bool ScoreScreenVisible() => GetScoreScreenNode(true).HasValue;
+
+        public Option<string> GetHanFuText()
+            => GetScoreScreenNode(true)
+                .FlatMap(node => node.GetChild(95, 2))
+                .FlatMap(node => node.GetNodeText());
+
+        public Option<string> GetHandScoreText()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(95, 3))
+            .Filter(node => node.Deref().IsVisible)
+            .FlatMap(node => node.GetNodeText());
+        // TODO: also check whether 46->54->95->4 is anything
+
+        public Option<string> GetWinType()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(56))
+            .FlatMap(node => node.GetNodeText());
+
+        public Option<string> GetWinSeatRound()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(57))
+            .FlatMap(node => node.GetNodeText());
+
+        public Option<string> GetWinnerName()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(58))
+            .FlatMap(node => node.GetNodeText());
+
+        public Option<UnmanagedPtr<AtkResNode>> GetWinnerHandNode()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(60));
+        public Option<UnmanagedPtr<AtkResNode>> GetWinningTileNode()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(79));
+
+        public Option<UnmanagedPtr<AtkResNode>> GetDoraIndicatorNode()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(80, 83))
+            .Filter(node => node.Deref().IsVisible);
+        public Option<UnmanagedPtr<AtkResNode>> GetUraDoraIndicatorNode()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(80, 84))
+            .Filter(node => node.Deref().IsVisible);
+
+        public Option<int> GetRiichiStickCount()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(86, 88))
+            .FlatMap(node => node.GetNodeText())
+            .FlatMap(s => s.TryParseInt());
+        public Option<int> GetRiichiStickBonus()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(86, 89))
+            .Filter(node => node.Deref().IsVisible)
+            .FlatMap(node => node.GetChild(2))
+            .FlatMap(node => node.GetNodeText())
+            .FlatMap(s => s.TrimStart('+').TryParseInt());
+        public Option<int> GetRepeatStickCount()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(86, 91))
+            .FlatMap(node => node.GetNodeText())
+            .FlatMap(s => s.TryParseInt());
+        public Option<int> GetRepeatStickBonus()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(86, 92))
+            .Filter(node => node.Deref().IsVisible)
+            .FlatMap(node => node.GetChild(2))
+            .FlatMap(node => node.GetNodeText())
+            .FlatMap(s => s.TrimStart('+').TryParseInt());
+
+        public (string, string)[] GetWinningYakuList()
+            => GetScoreScreenNode(true)
+            .FlatMap(node => node.GetChild(93))
+            .FlatMap(node => node.GetAsListComponent())
+            .Map(list => list.GetChildren()).ValueOrDefault()
+            .Map(node =>
+            {
+                var yaku = node.GetChild(2).FlatMap(textNode => textNode.GetNodeText()).ValueOrDefault();
+                var value = node.GetChild(3).FlatMap(textNode => textNode.GetNodeText()).ValueOrDefault();
+
+                return (yaku, value);
+            });
+            
+        #endregion ScoreScreen
 
         public class UIReaderError : Exception
         {

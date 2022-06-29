@@ -12,6 +12,10 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using System.Threading.Tasks;
+using Optional;
+using Optional.Linq;
+using Optional.Collections;
+using Optional.Unsafe;
 
 namespace DomanMahjongStatus
 {
@@ -44,7 +48,6 @@ namespace DomanMahjongStatus
 
         public Plugin(DalamudPluginInterface pluginInterface, Framework framework, CommandManager commandManager, ChatGui chatGui, GameGui gameGui)
         {
-            //pluginInterface.Create<Plugin>();
             this.PluginInterface = pluginInterface;
             this.Framework = framework;
             this.CommandManager = commandManager;
@@ -76,6 +79,17 @@ namespace DomanMahjongStatus
 
         private void OnCommand(string command, string args)
         {
+            /*
+            unsafe
+            {
+                var l = (AtkComponentList*)0x202A61675E0;
+                PluginLog.Log("[{lPtr}] length: {len}", ((IntPtr)l).ToString("X"), l->ListLength);
+                PluginLog.Log("ItemRendererList {0}, list[0] {1}, list[1] {2}", ((IntPtr)l->ItemRendererList).ToString("X"),
+                    ((IntPtr)l->ItemRendererList[0].AtkComponentListItemRenderer).ToString("X"),
+                    ((IntPtr)l->ItemRendererList[1].AtkComponentListItemRenderer).ToString("X"));
+            }
+            */
+
             PluginLog.Log("hello again from {Name}", Name);
             if (AddonPtr != IntPtr.Zero)
             {
@@ -83,11 +97,32 @@ namespace DomanMahjongStatus
                 ChatGui.Print(" yup, looks like you're playing mahjong!");
                 try
                 {
-                    MahjongStatus gameState = new UIReaderMahjongGame(AddonPtr).ReadMahjongStatus();
+                    var reader = new UIReaderMahjongGame(AddonPtr);
+                    MahjongStatus gameState = reader.ReadMahjongStatus();
                     ChatGui.Print(gameState.ToString());
 
-                    new UIReaderMahjongGame(AddonPtr).ReadCurrentPlayer()
+                    reader.ReadCurrentPlayer()
                         .MatchSome(seat => ChatGui.Print($" current turn: {seat}"));
+
+                    if (reader.ScoreScreenVisible())
+                    {
+                        Option<string> name = reader.GetWinnerName();
+                        Option<string> winType = reader.GetWinType();
+                        (string, string)[] yakuList = reader.GetWinningYakuList();
+                        Option<string> hanFuText = reader.GetHanFuText();
+                        Option<string> score = reader.GetHandScoreText();
+
+                        name.MatchSome(name => winType.MatchSome(winType => hanFuText.MatchSome(hanFu => score.MatchSome(score =>
+                        {
+                            var yakuText = yakuList.Map(tup =>
+                            {
+                                (string yaku, string value) = tup;
+                                return $"{yaku} ({value})";
+                            });
+
+                            ChatGui.Print($"{name} {winType} with {string.Join(", ", yakuText)} for {hanFu} totaling {score}");
+                        }))));
+                    }
                 }
                 catch (UIReaderMahjongGame.UIReaderError err)
                 {

@@ -101,6 +101,11 @@ namespace DomanMahjongStatus
             }
         }
 
+        public static unsafe Option<UnmanagedPtr<AtkResNode>> GetChild(this UnmanagedPtr<AtkComponentBase> node, params int[] ids)
+            => MaybePtr(node.Deref().OwnerNode)
+            .Map(node => node.Cast<AtkResNode>())
+            .FlatMap(node => node.GetChild(ids));
+
         public static unsafe Option<string> GetNodeText(this UnmanagedPtr<AtkResNode> maybeTextNode)
         {
             return maybeTextNode.SomeWhen(node => node.Ptr->Type == NodeType.Text)
@@ -128,6 +133,30 @@ namespace DomanMahjongStatus
                 .FlatMap(tex => MaybePtr(tex.Ptr->AtkTexture.Resource));
         }
 
+        public static unsafe Option<UnmanagedPtr<AtkComponentList>> GetAsListComponent(this UnmanagedPtr<AtkComponentBase> basePtr)
+            // this is safeish (the other thing Objects could be cast as has an enum at same offset as AtkUldComponentInfo.ComponentType
+            // which doesn't have an item with the same value as ComponentType.List)
+            => basePtr
+                .SomeWhen(b => ((AtkUldComponentInfo*)b.Deref().UldManager.Objects)->ComponentType == ComponentType.List)
+                .Map(b => b.Cast<AtkComponentList>());
+        public static unsafe Option<UnmanagedPtr<AtkComponentList>> GetAsListComponent(this UnmanagedPtr<AtkResNode> nodePtr)
+            => nodePtr.SomeWhen(n => n.IsComponent())
+            .FlatMap(n => MaybePtr(n.Deref().GetComponent()))
+            .FlatMap(c => c.GetAsListComponent());
+
+        public static unsafe UnmanagedPtr<AtkComponentBase>[] GetChildren(this UnmanagedPtr<AtkComponentList> listComponent)
+        {
+            var children = new List<UnmanagedPtr<AtkComponentBase>>();
+            for (int i = 0; i < listComponent.Deref().ListLength; i += 1)
+            {
+                MaybePtr(listComponent.Deref().ItemRendererList[i].AtkComponentListItemRenderer)
+                    .Map(p => p.Cast<AtkComponentBase>())
+                    .MatchSome(children.Add);
+
+            }
+            return children.ToArray();
+        }
+
         public static T[] Rest<T>(this T[] arr) => new ArraySegment<T>(arr).Slice(1).ToArray();
 
         public static Option<int> TryParseInt(this string s)
@@ -145,5 +174,50 @@ namespace DomanMahjongStatus
             else
                 return Option.None<TEnum>();
         }
+
+        public static TResult[] Map<T, TResult>(this T[] arr, Func<T, TResult> f)
+        {
+            var result = new List<TResult>();
+            foreach (T elem in arr)
+            {
+                result.Add(f(elem));
+            }
+            return result.ToArray();
+        }
+        public static TResult[] Map<T, TResult>(this T[] arr, Func<T, int, TResult> f)
+        {
+            var result = new List<TResult>();
+            for (int i = 0; i < arr.Length; i += 1)
+            {
+                result.Add(f(arr[i], i));
+            }
+            return result.ToArray();
+        }
+
+        public static T[] Filter<T>(this T[] arr, Func<T, bool> f)
+        {
+            var result = new List<T>();
+            foreach (T elem in arr)
+            {
+                if (f(elem))
+                {
+                    result.Add(elem);
+                }
+            }
+            return result.ToArray();
+        }
+        public static T[] Filter<T>(this T[] arr, Func<T, int, bool> f)
+        {
+            var result = new List<T>();
+            for (int i = 0; i < arr.Length; i += 1)
+            {
+                if (f(arr[i], i))
+                {
+                    result.Add(arr[i]);
+                }
+            }
+            return result.ToArray();
+        }
+
     }
 }

@@ -10,6 +10,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Dalamud.Logging;
 using Optional;
 using Optional.Linq;
+using Optional.Collections;
 using Optional.Unsafe;
 
 namespace DomanMahjongStatus
@@ -37,13 +38,11 @@ namespace DomanMahjongStatus
             PlayerStatus leftStatus = ReadPlayerStatus(1).ValueOrFailure("left opponent status");
             PlayerStatus middleStatus = ReadPlayerStatus(2).ValueOrFailure("middle opponent status");
             PlayerStatus rightStatus = ReadPlayerStatus(3).ValueOrFailure("right opponent status");
-            GameType gameType = ReadGameType().ValueOr(GameType.QuickMatch); //.ValueOrFailure("game type");
 
             return new MahjongStatus(
                 playerStatus, leftStatus, middleStatus, rightStatus,
                 round, hand,
-                riichiCount, honbaCount,
-                gameType);
+                riichiCount, honbaCount);
         }
 
         private Option<(Round, int)> ReadRoundHand()
@@ -79,7 +78,6 @@ namespace DomanMahjongStatus
             }
         }
 
-        // which: 0=player 1=left 2=across 3=right
         private Option<PlayerStatus> ReadPlayerStatus(int which) =>
             (which switch
             {
@@ -95,15 +93,8 @@ namespace DomanMahjongStatus
             bool isPlayer = which == RelativeSeat.Player;
             unsafe
             {
-                Option<UnmanagedPtr<AtkResNode>> paneNode = which.Some().FlatMap(n => n switch
-                {
-                    RelativeSeat.Player => RootPtr.FlatMap(node => node.GetChild(36, 37, 38)),
-                    RelativeSeat.Left => RootPtr.FlatMap(node => node.GetChild(36, 43, 44)),
-                    RelativeSeat.Across => RootPtr.FlatMap(node => node.GetChild(36, 41, 42)),
-                    RelativeSeat.Right => RootPtr.FlatMap(node => node.GetChild(36, 39, 40)),
-                    _ => Option.None<UnmanagedPtr<AtkResNode>>(),
-                });
-                Option<UnmanagedPtr<AtkComponentBase>> pc = paneNode.FlatMap(res => MaybePtr(res.Ptr->GetComponent()));
+                Option<UnmanagedPtr<AtkResNode>> paneNode = ReadPlayerPaneComponent(which);
+
                 Option<string> maybeName = paneNode
                     .FlatMap(node => isPlayer ? node.GetChild(4, 5) : node.GetChild(4, 5, 6))
                     .FlatMap(node => node.GetNodeText());
@@ -125,11 +116,26 @@ namespace DomanMahjongStatus
             }
         }
 
-        private Option<GameType> ReadGameType()
-        {
-            // TODO: actually read game type, probably will need to pull it from the duty info ui element?
-            return Option.None<GameType>();
-        }
+        private unsafe Option<UnmanagedPtr<AtkResNode>> ReadPlayerPaneComponent(RelativeSeat which)
+            => which.Some()
+                .FlatMap(_ => _ switch
+                    {
+                        RelativeSeat.Player => RootPtr.FlatMap(node => node.GetChild(36, 37, 38)),
+                        RelativeSeat.Left => RootPtr.FlatMap(node => node.GetChild(36, 43, 44)),
+                        RelativeSeat.Across => RootPtr.FlatMap(node => node.GetChild(36, 41, 42)),
+                        RelativeSeat.Right => RootPtr.FlatMap(node => node.GetChild(36, 39, 40)),
+                        _ => Option.None<UnmanagedPtr<AtkResNode>>(),
+                    });
+
+        public bool IsCurrentPlayer(RelativeSeat which)
+            => ReadPlayerPaneComponent(which)
+                .FlatMap(node => node.GetChild(which == RelativeSeat.Player ? 14 : 15))
+                .Map(node => node.GetChildren())
+                .ValueOrDefault()
+                .Any(childPtr => childPtr.Deref().IsVisible);
+
+        public Option<Mahjong.RelativeSeat> ReadCurrentPlayer()
+            => AllSeats().FirstOrNone(IsCurrentPlayer);
 
         public class UIReaderError : Exception
         {

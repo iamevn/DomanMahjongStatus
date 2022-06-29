@@ -63,6 +63,7 @@ namespace DomanMahjongStatus
         }
         
         public enum RelativeSeat { Player, Left, Across, Right }
+        public static RelativeSeat[] AllSeats() => (RelativeSeat[])Enum.GetValues(typeof(RelativeSeat));
 
         public enum Call { Chi, Pon, Kan, Riichi, Ron, Tsumo }
 

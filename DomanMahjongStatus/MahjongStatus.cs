@@ -36,7 +36,6 @@ namespace DomanMahjongStatus
         public PlayerStatus LeftOpponent;
         public PlayerStatus MiddleOpponent;
         public PlayerStatus RightOpponent;
-        public GameType GameType;
         public Round Round;
         public int hand;
         public int Hand
@@ -50,14 +49,12 @@ namespace DomanMahjongStatus
         public MahjongStatus(
             string playerName,
             string leftName, string middleName, string rightName,
-            Seat playerSeat,
-            GameType gameType = GameType.QuickMatch)
+            Seat playerSeat)
         {
             this.Player = new PlayerStatus(playerSeat, playerName);
             this.LeftOpponent = new PlayerStatus(playerSeat.Next(), leftName);
             this.MiddleOpponent = new PlayerStatus(playerSeat.Next(2), middleName);
             this.RightOpponent = new PlayerStatus(playerSeat.Next(3), rightName);
-            this.GameType = gameType;
             this.Round = Round.East;
             this.HonbaCount = 0;
             this.RiichiCount = 0;
@@ -72,8 +69,7 @@ namespace DomanMahjongStatus
             Round round = Round.East,
             int hand = 1,
             int riichiCount = 0,
-            int honbaCount = 0,
-            GameType gameType = GameType.QuickMatch)
+            int honbaCount = 0)
         {
             this.Player = player;
             this.LeftOpponent = leftOpponent;
@@ -83,14 +79,11 @@ namespace DomanMahjongStatus
             this.Hand = hand;
             this.RiichiCount = riichiCount;
             this.HonbaCount = honbaCount;
-            this.GameType = gameType;
         }
 
         public bool AdvanceHand(bool clearPot = false, bool clearHonba = false)
         {
             if (Round == Round.South && hand == 4)
-                return false;
-            if (GameType == GameType.QuickMatch && hand == 4)
                 return false;
 
             Player.AdvanceSeat();
@@ -120,8 +113,6 @@ namespace DomanMahjongStatus
 
         public bool SetRoundHand(Round round, int hand)
         {
-            if (GameType == GameType.QuickMatch && round == Round.South)
-                return false;
             if (hand < 1 || hand > 4)
                 return false;
             Round = round;
@@ -147,13 +138,8 @@ namespace DomanMahjongStatus
 
         public override string ToString()
         {
-            string roundHand = $"{GameType}: {Round} {hand}" + (HonbaCount > 0 ? $" (honba {HonbaCount})" : "");
+            string roundHand = $"{Round} {hand}" + (HonbaCount > 0 ? $" (honba {HonbaCount})" : "");
             return $"[{roundHand}] {Player}, {LeftOpponent}, {MiddleOpponent}, {RightOpponent}";
-        }
-
-        public static MahjongStatus DummyStatus()
-        {
-            return new MahjongStatus("me", "left", "middle", "right", Seat.East, GameType.QuickMatch);
         }
     }
 }

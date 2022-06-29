@@ -85,6 +85,9 @@ namespace DomanMahjongStatus
                 {
                     MahjongStatus gameState = new UIReaderMahjongGame(AddonPtr).ReadMahjongStatus();
                     ChatGui.Print(gameState.ToString());
+
+                    new UIReaderMahjongGame(AddonPtr).ReadCurrentPlayer()
+                        .MatchSome(seat => ChatGui.Print($" current turn: {seat}"));
                 }
                 catch (UIReaderMahjongGame.UIReaderError err)
                 {

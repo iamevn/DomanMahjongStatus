@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static DomanMahjongStatus.Mahjong;
 using static DomanMahjongStatus.GUINodeExtra;
+using static DomanMahjongStatus.Util;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Dalamud.Logging;
 using Optional;
@@ -64,7 +65,7 @@ namespace DomanMahjongStatus
                 return RootPtr.FlatMap(root => root.GetChild(21, 23))
                     .FlatMap(GUINodeExtra.GetNodeText)
                     .Map(honbaText => honbaText.Trim('×').Trim(' '))
-                    .FlatMap(GUINodeExtra.TryParseInt);
+                    .FlatMap(Util.MaybeParseInt);
             }
         }
 
@@ -75,7 +76,7 @@ namespace DomanMahjongStatus
                 return RootPtr.FlatMap(root => root.GetChild(21, 22))
                     .FlatMap(GUINodeExtra.GetNodeText)
                     .Map(riichiText => riichiText.Trim('×').Trim(' '))
-                    .FlatMap(GUINodeExtra.TryParseInt);
+                    .FlatMap(Util.MaybeParseInt);
             }
         }
 
@@ -103,12 +104,12 @@ namespace DomanMahjongStatus
                 Option<int> maybeScore = paneNode
                     .FlatMap(node => isPlayer ? node.GetChild(10, 12, 2) : node.GetChild(11, 13, 2))
                     .FlatMap(node => node.GetNodeText())
-                    .FlatMap(text => text.TryParseInt());
+                    .FlatMap(text => text.MaybeParseInt());
 
                 Option<Seat> maybeSeat = paneNode
                     .FlatMap(node => isPlayer ? node.GetChild(7, 9) : node.GetChild(8, 10))
                     .FlatMap(node => node.GetNodeText())
-                    .FlatMap(text => text.TryParseEnum<Seat>());
+                    .FlatMap(text => text.MaybeParseEnum<Seat>());
 
                 return from name in maybeName
                        from score in maybeScore
@@ -201,26 +202,26 @@ namespace DomanMahjongStatus
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(86, 88))
             .FlatMap(node => node.GetNodeText())
-            .FlatMap(s => s.TryParseInt());
+            .FlatMap(s => s.MaybeParseInt());
         public Option<int> GetRiichiStickBonus()
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(86, 89))
             .Filter(node => node.Deref().IsVisible)
             .FlatMap(node => node.GetChild(2))
             .FlatMap(node => node.GetNodeText())
-            .FlatMap(s => s.TrimStart('+').TryParseInt());
+            .FlatMap(s => s.TrimStart('+').MaybeParseInt());
         public Option<int> GetRepeatStickCount()
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(86, 91))
             .FlatMap(node => node.GetNodeText())
-            .FlatMap(s => s.TryParseInt());
+            .FlatMap(s => s.MaybeParseInt());
         public Option<int> GetRepeatStickBonus()
             => GetScoreScreenNode(true)
             .FlatMap(node => node.GetChild(86, 92))
             .Filter(node => node.Deref().IsVisible)
             .FlatMap(node => node.GetChild(2))
             .FlatMap(node => node.GetNodeText())
-            .FlatMap(s => s.TrimStart('+').TryParseInt());
+            .FlatMap(s => s.TrimStart('+').MaybeParseInt());
 
         public List<(string, string)> GetWinningYakuList()
             => GetScoreScreenNode(true)

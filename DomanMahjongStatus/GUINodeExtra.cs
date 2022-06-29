@@ -5,38 +5,12 @@ using Optional.Unsafe;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using static DomanMahjongStatus.Util;
 
 namespace DomanMahjongStatus
 {
     public static class GUINodeExtra
     {
-        public unsafe class UnmanagedPtr<T> where T : unmanaged
-        {
-            public T* Ptr { get; init; }
-
-            private UnmanagedPtr(T* rawPtr)
-            {
-                Ptr = rawPtr;
-            }
-
-            public static Option<UnmanagedPtr<U>> MaybeFrom<U>(U* maybeNull) where U : unmanaged
-            {
-                if (maybeNull == null)
-                    return Option.None<UnmanagedPtr<U>>();
-                else
-                    return Option.Some(new UnmanagedPtr<U>(maybeNull));
-            }
-
-            public UnmanagedPtr<U> Cast<U>() where U : unmanaged
-            {
-                return new UnmanagedPtr<U>((U*)Ptr);
-            }
-
-            public static implicit operator T*(UnmanagedPtr<T> p) => p.Ptr;
-            public T Deref() => *Ptr;
-        }
-        public static unsafe Option<UnmanagedPtr<T>> MaybePtr<T>(T* maybeNull) where T : unmanaged
-            => UnmanagedPtr<T>.MaybeFrom(maybeNull);
 
         public static unsafe bool IsComponent(this UnmanagedPtr<AtkResNode> node)
             => (int)node.Ptr->Type >= 1000;
@@ -174,86 +148,5 @@ namespace DomanMahjongStatus
             }
             return children.ToArray();
         }
-
-        public static T[] Rest<T>(this T[] arr) => new ArraySegment<T>(arr).Slice(1).ToArray();
-
-        public static Option<int> TryParseInt(this string s)
-        {
-            if (int.TryParse(s, out int i))
-                return i.Some();
-            else
-                return Option.None<int>();
-        }
-
-        public static Option<TEnum> TryParseEnum<TEnum>(this string s, bool ignoreCase = false) where TEnum : struct
-        {
-            if (Enum.TryParse(s, ignoreCase, out TEnum value))
-                return value.Some();
-            else
-                return Option.None<TEnum>();
-        }
-
-        public static TResult[] Map<T, TResult>(this T[] arr, Func<T, TResult> f)
-        {
-            var result = new List<TResult>();
-            foreach (T elem in arr)
-            {
-                result.Add(f(elem));
-            }
-            return result.ToArray();
-        }
-        public static TResult[] Map<T, TResult>(this T[] arr, Func<T, int, TResult> f)
-        {
-            var result = new List<TResult>();
-            for (int i = 0; i < arr.Length; i += 1)
-            {
-                result.Add(f(arr[i], i));
-            }
-            return result.ToArray();
-        }
-        public static List<TResult> Map<T, TResult>(this List<T> lst, Func<T, TResult> f)
-        {
-            var result = new List<TResult>();
-            foreach (T elem in lst)
-            {
-                result.Add(f(elem));
-            }
-            return result;
-        }
-        public static List<TResult> Map<T, TResult>(this List<T> lst, Func<T, int, TResult> f)
-        {
-            var result = new List<TResult>();
-            for (int i = 0; i < lst.Count; i += 1)
-            {
-                result.Add(f(lst[i], i));
-            }
-            return result;
-        }
-
-        public static T[] Filter<T>(this T[] arr, Func<T, bool> f)
-        {
-            var result = new List<T>();
-            foreach (T elem in arr)
-            {
-                if (f(elem))
-                {
-                    result.Add(elem);
-                }
-            }
-            return result.ToArray();
-        }
-        public static T[] Filter<T>(this T[] arr, Func<T, int, bool> f)
-        {
-            var result = new List<T>();
-            for (int i = 0; i < arr.Length; i += 1)
-            {
-                if (f(arr[i], i))
-                {
-                    result.Add(arr[i]);
-                }
-            }
-            return result.ToArray();
-        }
-
     }
 }

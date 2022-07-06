@@ -25,6 +25,7 @@ namespace DomanMahjongStatus
 
         private const string commandName = "/majstat";
         private const string dumpCommandName = "/dumpUIState";
+        private const string logCommandName = "/majlog";
         private IntPtr addonPtr = IntPtr.Zero;
 
         private IntPtr AddonPtr
@@ -65,6 +66,11 @@ namespace DomanMahjongStatus
                 HelpMessage = "Dump UIState bytes",
             });
 
+            _ = CommandManager.AddHandler(logCommandName, new CommandInfo(OnLogCommand)
+            {
+                HelpMessage = "Log mahjong stats parsed from UIState",
+            });
+
             // Framework.Update += PollMahjong;
         }
 
@@ -81,6 +87,7 @@ namespace DomanMahjongStatus
                 Framework.Update -= PollMahjong;
                 _ = CommandManager.RemoveHandler(commandName);
                 _ = CommandManager.RemoveHandler(dumpCommandName);
+                _ = CommandManager.RemoveHandler(logCommandName);
             }
         }
 
@@ -89,6 +96,12 @@ namespace DomanMahjongStatus
             ChatGui.Print("Dumping UIState...");
             string dest = DebugUIState.Dump();
             ChatGui.Print($"Dumped to {dest}");
+        }
+
+        private void OnLogCommand(string command, string args)
+        {
+            ChatGui.Print("Reading UIState...");
+            DebugUIState.LogChat(ChatGui);
         }
 
         private void OnCommand(string command, string args)

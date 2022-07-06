@@ -54,5 +54,28 @@ namespace DomanMahjongStatus
             file.Write(GetUIStateBytes(), 0, UIStateSize);
             return file.Name;
         }
+
+
+        private const int RankInfoOffset = 0x14F78;
+        private static IntPtr RankInfoPtr { get => UIStatePtr + RankInfoOffset; }
+        private static short MatchCount { get => Marshal.ReadInt16(RankInfoPtr, 0); }
+        private static short CurrentRating { get => Marshal.ReadInt16(RankInfoPtr, 2); }
+        private static short MaxRating { get => Marshal.ReadInt16(RankInfoPtr, 4); }
+        private static short RankPoints { get => Marshal.ReadInt16(RankInfoPtr, 6); }
+        private static byte UnknownByte1 { get => Marshal.ReadByte(RankInfoPtr, 8); }
+        private static byte UnknownByte2 { get => Marshal.ReadByte(RankInfoPtr, 9); }
+
+        public static void LogChat(ChatGui chat)
+        {
+            byte[] barr = new byte[10];
+            Marshal.Copy(RankInfoPtr, barr, 0, 10);
+            string bytes = BitConverter.ToString(barr);
+
+            chat.Print($"read {bytes} from 0x{RankInfoPtr:X} (UIState* + 0x{RankInfoOffset:X})");
+            chat.Print($"Rank: ??? (0x{UnknownByte1:X2} 0x{UnknownByte2:X2}) - {RankPoints} points");
+            chat.Print($"Current Rating: {CurrentRating}");
+            chat.Print($"Highest Rating: {MaxRating}");
+            chat.Print($"MatchesPlayed: {MatchCount}");
+        }
     }
 }

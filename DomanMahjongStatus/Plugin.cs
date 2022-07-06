@@ -1,4 +1,4 @@
-﻿using Dalamud;
+using Dalamud;
 using Dalamud.Configuration;
 using Dalamud.Data;
 using Dalamud.Game.ClientState;
@@ -24,6 +24,7 @@ namespace DomanMahjongStatus
         public string Name => "Doman Mahjong Status";
 
         private const string commandName = "/majstat";
+        private const string dumpCommandName = "/dumpUIState";
         private IntPtr addonPtr = IntPtr.Zero;
 
         private IntPtr AddonPtr
@@ -59,6 +60,11 @@ namespace DomanMahjongStatus
                 HelpMessage = "Write current mahjong status to chat log"
             });
 
+            _ = CommandManager.AddHandler(dumpCommandName, new CommandInfo(OnDumpCommand)
+            {
+                HelpMessage = "Dump UIState bytes",
+            });
+
             // Framework.Update += PollMahjong;
         }
 
@@ -74,7 +80,15 @@ namespace DomanMahjongStatus
             {
                 Framework.Update -= PollMahjong;
                 _ = CommandManager.RemoveHandler(commandName);
+                _ = CommandManager.RemoveHandler(dumpCommandName);
             }
+        }
+
+        private void OnDumpCommand(string command, string args)
+        {
+            ChatGui.Print("Dumping UIState...");
+            string dest = DebugUIState.Dump();
+            ChatGui.Print($"Dumped to {dest}");
         }
 
         private void OnCommand(string command, string args)
@@ -98,7 +112,7 @@ namespace DomanMahjongStatus
                         PluginLog.Log("score screen visible");
                         Option<string> name = reader.GetWinnerName();
                         Option<string> winType = reader.GetWinType();
-                        
+
                         Option<string> hanFuText = reader.GetHanFuText();
                         Option<string> score = reader.GetHandScoreText();
                         var yakuList = reader.GetWinningYakuList();
@@ -107,7 +121,7 @@ namespace DomanMahjongStatus
                             (string yaku, string value) = tup;
                             return $"{yaku} ({value})";
                         });
-                        name.MatchSome(name => winType.MatchSome(winType => hanFuText.MatchSome(hanFu => score.MatchSome(score => 
+                        name.MatchSome(name => winType.MatchSome(winType => hanFuText.MatchSome(hanFu => score.MatchSome(score =>
                             ChatGui.Print($"{name} {winType} with [{string.Join(", ", yakuText)}] for {hanFu} totaling {score}")))));
                     }
                 }

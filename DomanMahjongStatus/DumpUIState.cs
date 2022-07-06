@@ -77,5 +77,11 @@ namespace DomanMahjongStatus
             chat.Print($"Highest Rating: {MaxRating}");
             chat.Print($"MatchesPlayed: {MatchCount}");
         }
+
+        public static void OverwriteRankInfo(int offset, byte value)
+        {
+            if (offset >= 0 && offset <= 9)
+                Marshal.WriteByte(RankInfoPtr + offset, value);
+        }
     }
 }

@@ -1,4 +1,4 @@
-using Dalamud;
+﻿using Dalamud;
 using Dalamud.Configuration;
 using Dalamud.Data;
 using Dalamud.Game.ClientState;
@@ -26,6 +26,7 @@ namespace DomanMahjongStatus
         private const string commandName = "/majstat";
         private const string dumpCommandName = "/dumpUIState";
         private const string logCommandName = "/majlog";
+        private const string writeCommandName = "/majwrite";
         private IntPtr addonPtr = IntPtr.Zero;
 
         private IntPtr AddonPtr
@@ -71,6 +72,11 @@ namespace DomanMahjongStatus
                 HelpMessage = "Log mahjong stats parsed from UIState",
             });
 
+            _ = CommandManager.AddHandler(writeCommandName, new CommandInfo(OnWriteCommand)
+            {
+                HelpMessage = "Overwrite a byte in the mahjong stat section of UIState",
+            });
+
             // Framework.Update += PollMahjong;
         }
 
@@ -88,6 +94,7 @@ namespace DomanMahjongStatus
                 _ = CommandManager.RemoveHandler(commandName);
                 _ = CommandManager.RemoveHandler(dumpCommandName);
                 _ = CommandManager.RemoveHandler(logCommandName);
+                _ = CommandManager.RemoveHandler(writeCommandName);
             }
         }
 
@@ -114,6 +121,59 @@ namespace DomanMahjongStatus
             {
                 ChatGui.Print($"found at 0x{found:X}");
             }
+        }
+
+        private static bool TryParseHex(string s, out int result)
+        {
+            char[] _trim_hex = new char[] { '0', 'x' };
+            return int.TryParse(s.TrimStart(_trim_hex), System.Globalization.NumberStyles.HexNumber, null, out result);
+        }
+        private static bool TryParseHex(string s, out byte result)
+        {
+            char[] _trim_hex = new char[] { '0', 'x' };
+            return byte.TryParse(s.TrimStart(_trim_hex), System.Globalization.NumberStyles.HexNumber, null, out result);
+        }
+
+        private void OnWriteCommand(string command, string args)
+        {
+            string[] splitArgs = args.Split(' ');
+            if (splitArgs.Length != 2)
+            {
+                ChatGui.PrintError($"error parsing {command} {args}. expected 2 args, got {splitArgs.Length}");
+                return;
+            }
+
+            int offset;
+            byte value;
+            bool success;
+
+            if (splitArgs[0].StartsWith("0x"))
+                success = TryParseHex(splitArgs[0], out offset);
+            else
+                success = int.TryParse(splitArgs[0], out offset);
+            if (!success)
+            {
+                ChatGui.PrintError($"Unable to parse \"{splitArgs[0]}\" as an int");
+                return;
+            }
+            if (offset < 0 || offset >= 10)
+            {
+                ChatGui.PrintError($"Offset {offset} out of range (0-9 inclusive)");
+                return;
+            }
+
+            if (splitArgs[1].StartsWith("0x"))
+                success = TryParseHex(splitArgs[1], out value);
+            else
+                success = byte.TryParse(splitArgs[1], out value);
+            if (!success)
+            {
+                ChatGui.PrintError($"Unable to parse \"{splitArgs[1]}\" as a byte");
+                return;
+            }
+
+            ChatGui.Print($"OverwriteRankInfo({offset}, 0x{value:X2});");
+            DebugUIState.OverwriteRankInfo(offset, value);
         }
 
         private void OnCommand(string command, string args)

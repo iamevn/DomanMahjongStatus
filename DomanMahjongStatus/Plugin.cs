@@ -102,6 +102,18 @@ namespace DomanMahjongStatus
         {
             ChatGui.Print("Reading UIState...");
             DebugUIState.LogChat(ChatGui);
+
+            ChatGui.Print("Scanning...");
+            SigScanner scanner = new SigScanner();
+            IntPtr found = scanner.ScanModule("2D 00 9E 06 CB 06 3C 00 09 01");
+            if (found == IntPtr.Zero)
+            {
+                ChatGui.Print("found nothing");
+            }
+            else
+            {
+                ChatGui.Print($"found at 0x{found:X}");
+            }
         }
 
         private void OnCommand(string command, string args)

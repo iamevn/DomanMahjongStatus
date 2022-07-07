@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
+	<PropertyGroup>
+		<Authors>iamevn</Authors>
+		<Version>0.1.0.0</Version>
+	</PropertyGroup>
   <PropertyGroup>
     <AssemblyName>DomanMahjongStatus</AssemblyName>
     <TargetFramework>net5.0-windows</TargetFramework>

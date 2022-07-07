@@ -23,9 +23,10 @@ namespace DomanMahjongStatus
     {
         public string Name => "Doman Mahjong Status";
 
-        private const string commandName = "/majstat";
+        private const string commandName = "/mj";
+        private const string logCommandName = "/mjstat";
         private const string dumpCommandName = "/dumpUIState";
-        private const string logCommandName = "/majlog";
+
         private IntPtr addonPtr = IntPtr.Zero;
 
         private IntPtr AddonPtr
@@ -66,7 +67,7 @@ namespace DomanMahjongStatus
                 HelpMessage = "Dump UIState bytes",
             });
 
-            _ = CommandManager.AddHandler(logCommandName, new CommandInfo(OnLogCommand)
+            _ = CommandManager.AddHandler(logCommandName, new CommandInfo(OnStatCommand)
             {
                 HelpMessage = "Log mahjong stats parsed from UIState",
             });
@@ -98,10 +99,24 @@ namespace DomanMahjongStatus
             ChatGui.Print($"Dumped to {dest}");
         }
 
-        private void OnLogCommand(string command, string args)
+        private void OnStatCommand(string command, string args)
         {
             ChatGui.Print("Reading UIState...");
-            DebugUIState.LogChat(ChatGui);
+
+            string bytes = "[" + BitConverter.ToString(Stats.RankInfoBytes).Replace("-", ", ") + "]";
+            ChatGui.Print($"read {bytes} from UIState+0x{Stats.RankInfoOffset:X}");
+
+            if (Stats.Initialized)
+            {
+                ChatGui.Print($"Matches Played: {Stats.MatchCount}");
+                ChatGui.Print($"Current Rating: {Stats.CurrentRating}");
+                ChatGui.Print($"Highest Rating: {Stats.MaxRating}");
+                ChatGui.Print($"Rank: ??? (0x{Stats.Unknown1:X2} 0x{Stats.Unknown2:X2}) - {Stats.RankPoints} points");
+            }
+            else
+            {
+                ChatGui.Print("Couldn't find stats, have you opened the Gold Saucer panel and have you played any mahjong?");
+            }
         }
 
         private void OnCommand(string command, string args)

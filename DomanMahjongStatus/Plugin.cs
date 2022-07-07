@@ -95,7 +95,7 @@ namespace DomanMahjongStatus
         private void OnDumpCommand(string command, string args)
         {
             ChatGui.Print("Dumping UIState...");
-            string dest = DebugUIState.Dump();
+            string dest = DumpUIState.Dump();
             ChatGui.Print($"Dumped to {dest}");
         }
 

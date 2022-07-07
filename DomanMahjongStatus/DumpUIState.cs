@@ -6,9 +6,9 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
 namespace DomanMahjongStatus
 {
-    public static class DebugUIState
+    public static class DumpUIState
     {
-        private const string BaseFolder = @"c:\Users\Evan\Desktop\XIV_UIState_dumps";
+        private const string BaseFolder = @"c:\XIV_UIState_dumps";
         private const string FileBase = "UIState";
 
         private const int UIStateSize = 0x168D8;

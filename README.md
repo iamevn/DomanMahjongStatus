@@ -11,5 +11,6 @@ read [1E, 00, 96, 05, 9A, 06, 3C, 00, 09, 01] from UIState+0x14F78
 Matches Played: 30
 Current Rating: 1430
 Highest Rating: 1690
-Rank: ??? (0x09 0x01) - 60 points
+Rank: 1 Kyu (0x09) - 60 points
+Unknown: 0x01
 ```

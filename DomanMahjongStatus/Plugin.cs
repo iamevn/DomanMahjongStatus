@@ -50,7 +50,8 @@ namespace DomanMahjongStatus
                 ChatGui.Print($"Matches Played: {Stats.MatchCount}");
                 ChatGui.Print($"Current Rating: {Stats.CurrentRating}");
                 ChatGui.Print($"Highest Rating: {Stats.MaxRating}");
-                ChatGui.Print($"Rank: ??? (0x{Stats.Unknown1:X2} 0x{Stats.Unknown2:X2}) - {Stats.RankPoints} points");
+                ChatGui.Print($"Rank: {Stats.RankLevel} (0x{Stats.RankLevelRaw:X2}) - {Stats.RankPoints} points");
+                ChatGui.Print($"Unknown: 0x{Stats.Unknown:X2}");
             }
             else
             {
